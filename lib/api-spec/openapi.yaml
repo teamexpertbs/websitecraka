@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CraKa OSINT Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: osint
+    description: OSINT lookup operations
+  - name: admin
+    description: Admin operations
+  - name: users
+    description: User operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,338 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /osint/apis:
+    get:
+      operationId: listApis
+      tags: [osint]
+      summary: List all active OSINT APIs
+      responses:
+        "200":
+          description: List of active APIs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OsintApi"
+
+  /osint/lookup:
+    post:
+      operationId: performLookup
+      tags: [osint]
+      summary: Perform an OSINT lookup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LookupRequest"
+      responses:
+        "200":
+          description: Lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookupResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /osint/history:
+    get:
+      operationId: getHistory
+      tags: [osint]
+      summary: Get query history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /osint/stats:
+    get:
+      operationId: getStats
+      tags: [osint]
+      summary: Get portal statistics
+      responses:
+        "200":
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+      responses:
+        "200":
+          description: Login result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/apis:
+    get:
+      operationId: adminListApis
+      tags: [admin]
+      summary: Admin - list all APIs including inactive
+      responses:
+        "200":
+          description: All APIs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OsintApi"
+    post:
+      operationId: adminCreateApi
+      tags: [admin]
+      summary: Admin - create a new API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiRequest"
+      responses:
+        "201":
+          description: Created API
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OsintApi"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/apis/{slug}:
+    put:
+      operationId: adminUpdateApi
+      tags: [admin]
+      summary: Admin - update an API
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApiRequest"
+      responses:
+        "200":
+          description: Updated API
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OsintApi"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteApi
+      tags: [admin]
+      summary: Admin - delete an API
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/history:
+    get:
+      operationId: adminGetHistory
+      tags: [admin]
+      summary: Admin - get full history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: History
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /admin/stats:
+    get:
+      operationId: adminGetStats
+      tags: [admin]
+      summary: Admin - get full stats
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStatsResponse"
+
+  /admin/cache:
+    delete:
+      operationId: adminClearCache
+      tags: [admin]
+      summary: Admin - clear all cached results
+      responses:
+        "200":
+          description: Cache cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/grant-premium:
+    post:
+      operationId: adminGrantPremium
+      tags: [admin]
+      summary: Admin - grant premium to a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantPremiumRequest"
+      responses:
+        "200":
+          description: Premium granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: Admin - list all users
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersResponse"
+
+  /user/init:
+    post:
+      operationId: initUser
+      tags: [users]
+      summary: Initialize or fetch user session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitUserRequest"
+      responses:
+        "200":
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserData"
+
+  /user/me:
+    get:
+      operationId: getUserMe
+      tags: [users]
+      summary: Get current user data
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserData"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +371,413 @@ components:
       required:
         - status
 
+    OsintApi:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        command:
+          type: string
+        example:
+          type: string
+        pattern:
+          type: string
+          nullable: true
+        category:
+          type: string
+        credits:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - slug
+        - name
+        - url
+        - command
+        - example
+        - category
+        - credits
+        - isActive
+        - createdAt
+
+    LookupRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+        query:
+          type: string
+      required:
+        - slug
+        - query
+
+    LookupResult:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+        cached:
+          type: boolean
+        apiName:
+          type: string
+        success:
+          type: boolean
+        developer:
+          type: string
+        error:
+          type: string
+          nullable: true
+      required:
+        - data
+        - cached
+        - apiName
+        - success
+
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        apiName:
+          type: string
+        queryVal:
+          type: string
+        success:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - slug
+        - apiName
+        - queryVal
+        - success
+        - createdAt
+
+    HistoryResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - entries
+        - total
+        - page
+        - limit
+
+    StatsResponse:
+      type: object
+      properties:
+        totalLookups:
+          type: integer
+        successfulLookups:
+          type: integer
+        activeApis:
+          type: integer
+        cachedResults:
+          type: integer
+        categoryBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required:
+              - category
+              - count
+        topApis:
+          type: array
+          items:
+            type: object
+            properties:
+              apiName:
+                type: string
+              count:
+                type: integer
+            required:
+              - apiName
+              - count
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+      required:
+        - totalLookups
+        - successfulLookups
+        - activeApis
+        - cachedResults
+        - categoryBreakdown
+        - topApis
+        - recentActivity
+
+    AdminLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AdminLoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        token:
+          type: string
+        message:
+          type: string
+      required:
+        - success
+
+    CreateApiRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        command:
+          type: string
+        example:
+          type: string
+        pattern:
+          type: string
+          nullable: true
+        category:
+          type: string
+        credits:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - slug
+        - name
+        - url
+        - command
+        - example
+        - category
+
+    UpdateApiRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        command:
+          type: string
+        example:
+          type: string
+        pattern:
+          type: string
+          nullable: true
+        category:
+          type: string
+        credits:
+          type: integer
+        isActive:
+          type: boolean
+
+    AdminStatsResponse:
+      type: object
+      properties:
+        totalLookups:
+          type: integer
+        successfulLookups:
+          type: integer
+        failedLookups:
+          type: integer
+        activeApis:
+          type: integer
+        totalApis:
+          type: integer
+        cachedResults:
+          type: integer
+        totalUsers:
+          type: integer
+        premiumUsers:
+          type: integer
+        categoryBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required:
+              - category
+              - count
+        topApis:
+          type: array
+          items:
+            type: object
+            properties:
+              apiName:
+                type: string
+              count:
+                type: integer
+            required:
+              - apiName
+              - count
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+      required:
+        - totalLookups
+        - successfulLookups
+        - failedLookups
+        - activeApis
+        - totalApis
+        - cachedResults
+        - totalUsers
+        - premiumUsers
+        - categoryBreakdown
+        - topApis
+        - recentActivity
+
+    GrantPremiumRequest:
+      type: object
+      properties:
+        referralCode:
+          type: string
+        plan:
+          type: string
+      required:
+        - referralCode
+        - plan
+
+    UserData:
+      type: object
+      properties:
+        referralCode:
+          type: string
+        isPremium:
+          type: boolean
+        premiumPlan:
+          type: string
+          nullable: true
+        creditsEarned:
+          type: integer
+        totalReferrals:
+          type: integer
+        referredBy:
+          type: string
+          nullable: true
+        recentReferrals:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+              credits:
+                type: integer
+      required:
+        - referralCode
+        - isPremium
+        - creditsEarned
+        - totalReferrals
+
+    UsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit
+
+    AdminUserEntry:
+      type: object
+      properties:
+        referralCode:
+          type: string
+        isPremium:
+          type: boolean
+        premiumPlan:
+          type: string
+          nullable: true
+        totalReferrals:
+          type: integer
+        creditsEarned:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - referralCode
+        - isPremium
+        - totalReferrals
+        - creditsEarned
+        - createdAt
+
+    InitUserRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        referralCode:
+          type: string
+          nullable: true
+      required:
+        - sessionId
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
